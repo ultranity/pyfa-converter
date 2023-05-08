@@ -10,6 +10,14 @@ from pydantic import BaseModel
 from pydantic.fields import FieldInfo
 from pydantic.fields import ModelField
 
+from collections import ChainMap
+def all_annotations(cls) -> ChainMap:
+    """Returns a dictionary-like ChainMap that includes annotations for all
+       attributes defined in cls or inherited from superclasses.
+       
+       ref:https://stackoverflow.com/questions/63903901/how-can-i-access-to-annotations-of-parent-class
+    """
+    return ChainMap(*(c.__annotations__ for c in cls.mro() if hasattr(c, '__annotations__') ))
 
 class PydanticConverterUtils:
     @classmethod
@@ -52,7 +60,7 @@ class PydanticConverterUtils:
                 name=field.alias,
                 kind=inspect.Parameter.POSITIONAL_ONLY,
                 default=param_maker(field),
-                annotation=model.__annotations__.get(field.name) or field.annotation,
+                annotation=all_annotations(model).get(field.name) or field.annotation,
             )
             for field in model.__fields__.values()
         ]
